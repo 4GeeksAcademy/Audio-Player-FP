@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 const MediaPlayer = () => {
   const baseUrl = "https://playground.4geeks.com";
@@ -26,7 +26,26 @@ const MediaPlayer = () => {
 
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [durations, setDurations] = useState([]);
   const audioElement = useRef(null);
+
+  useEffect(() => {
+    const fetchDurations = async () => {
+      const durationPromises = tracks.map((track) => {
+        return new Promise((resolve) => {
+          const audio = new Audio(`${baseUrl}${track.url}`);
+          audio.onloadedmetadata = () => {
+            resolve(audio.duration);
+          };
+        });
+      });
+
+      const durations = await Promise.all(durationPromises);
+      setDurations(durations);
+    };
+
+    fetchDurations();
+  }, [tracks]);
 
   const handlePlayPause = () => {
     if (isPlaying) {
@@ -55,6 +74,12 @@ const MediaPlayer = () => {
     }, 0);
   };
 
+  const formatDuration = (duration) => {
+    const minutes = Math.floor(duration / 60);
+    const seconds = Math.floor(duration % 60);
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
+
   return (
     <div className="player-container">
       <ul className="track-list">
@@ -67,8 +92,13 @@ const MediaPlayer = () => {
               audioElement.current.play();
               setIsPlaying(true);
             }}
+            onMouseEnter={(e) => e.currentTarget.classList.add('hover')}
+            onMouseLeave={(e) => e.currentTarget.classList.remove('hover')}
           >
-            {index + 1}. {track.name}
+            {index + 1}. {track.name}{" "}
+            <span className="duration">
+              {durations[index] ? formatDuration(durations[index]) : "Loading..."}
+            </span>
           </li>
         ))}
       </ul>
@@ -87,3 +117,71 @@ const MediaPlayer = () => {
 };
 
 export default MediaPlayer;
+
+// CSS styles
+const styles = `
+  body {
+    font-family: Arial, sans-serif;
+    background-color: rgba(0, 0, 0, 0.838);
+    color: white;
+    text-align: center;
+  }
+  
+  .player-container {
+    width: 30%;
+    margin: 0 auto;
+    text-align: center;
+    background-color: #3a3a3a;
+    padding: 15px;
+    border-radius: 10px;
+  }
+  
+  .track-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .track-list li {
+    padding: 6px;
+    cursor: pointer;
+    border-bottom: 1px solid #4a4a4a;
+    text-align: justify;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .track-list li.current, .track-list li.hover {
+    background-color: #5a5a5a;
+  }
+  
+  .controls {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+  }
+  
+  .controls button {
+    padding: 8px 16px;
+    cursor: pointer;
+    border: none;
+    background-color: #5a5a5a;
+    color: #fff;
+    border-radius: 5px;
+  }
+  
+  .controls button:hover {
+    background-color: #6a6a6a;
+  }
+  
+  .duration {
+    font-size: 0.9em;
+    color: #ccc;
+  }
+  
+  audio {
+    display: none;
+  }
+`;
+
+export { MediaPlayer, styles };
