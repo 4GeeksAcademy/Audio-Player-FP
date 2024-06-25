@@ -29,7 +29,7 @@ body {
   text-align: justify;
   display: flex;
   justify-content: space-between;
-  align-items: c
+  align-items: center;
 }
 
 .track-list li.current, .track-list li.hover {
